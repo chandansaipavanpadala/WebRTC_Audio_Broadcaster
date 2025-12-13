@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AudioSync</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+  <div id="app">
+    <!-- Landing View -->
+    <div id="landing-view" class="view active">
+      <h1 class="main-title">AudioSync</h1>
+      <p class="subtitle">Select your Sync Mode</p>
+
+      <div class="mode-selection">
+        <div class="mode-card" id="mode-network">
+          <div class="icon">🌐</div>
+          <h2>Network Speakers</h2>
+          <p>Sync audio across multiple phones/laptops via Wi-Fi.</p>
+        </div>
+
+        <div class="mode-card" id="mode-bluetooth">
+          <div class="icon">🎧</div>
+          <h2>Bluetooth Multi-Output</h2>
+          <p>Play to multiple local speakers connected to this PC.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bluetooth Mode View -->
+    <div id="bluetooth-view" class="view hidden">
+      <header>
+        <button id="bt-back-btn" class="btn secondary small">← Back</button>
+        <h2 style="margin-left: 1rem;">Bluetooth Multi-Output</h2>
+      </header>
+
+      <main>
+        <div class="control-panel">
+          <button id="bt-scan-btn" class="btn secondary">🔄 Rescan Devices</button>
+          <button id="bt-start-btn" class="btn primary pulse-anim">▶ Start Audio Source</button>
+        </div>
+
+        <div id="bt-status" class="status-msg">First start source, then select devices to duplicate audio.</div>
+
+        <div class="device-section">
+          <h3>Original Source (Default)</h3>
+          <div id="bt-default-device" class="device-list list-view">
+            <!-- Default device injected here -->
+          </div>
+        </div>
+
+        <div class="divider-line"></div>
+
+        <div class="device-section">
+          <h3>Duplicate To:</h3>
+          <div id="bt-device-list" class="device-list list-view">
+            <!-- Other devices injected here -->
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Network: Login View -->
+    <div id="login-view" class="view hidden">
+      <header>
+        <button id="net-back-btn" class="btn secondary small">← Back</button>
+        <h2 style="margin-left: 1rem;">Network Speakers</h2>
+      </header>
+      <main class="center-content">
+        <div class="card">
+          <input type="text" id="username" placeholder="Your Name" autocomplete="off">
+          <div class="divider"></div>
+          <button id="create-btn" class="btn primary">Create New Room</button>
+          <div class="or-separator">OR</div>
+          <div class="join-group">
+            <input type="text" id="room-code-input" placeholder="Room Code (6 chars)" maxlength="6">
+            <button id="join-btn" class="btn secondary">Join</button>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <!-- Network: Room View -->
+    <div id="room-view" class="view hidden">
+      <header>
+        <div class="room-info">
+          <span class="label">ROOM CODE</span>
+          <h1 id="room-display">------</h1>
+        </div>
+        <button id="leave-btn" class="btn danger small">Leave</button>
+      </header>
+
+      <main>
+        <div id="visualizer-container">
+          <canvas id="visualizer"></canvas>
+          <div id="status-text">Waiting for audio...</div>
+        </div>
+
+        <div class="controls-area">
+          <!-- Broadcaster Controls -->
+          <div id="broadcaster-controls" class="hidden">
+            <p class="role-badge">You are the Broadcaster</p>
+            <button id="start-stream-btn" class="btn primary pulse-anim">Start Streaming</button>
+          </div>
+
+          <!-- Admin Controls -->
+          <div id="admin-controls" class="hidden">
+            <span class="section-title">Admin Panel</span>
+            <p class="hint">Select a device below to broadcast</p>
+          </div>
+        </div>
+
+        <div class="device-list-container">
+          <div class="section-header">
+            <h2>Connected Devices <span id="device-count">(0/7)</span></h2>
+          </div>
+          <div id="device-list" class="grid-list">
+            <!-- Devices injected here -->
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <!-- Audio Elements (Hidden) -->
+  <audio id="remote-audio" autoplay></audio>
+
+  <script src="script.js"></script>
+</body>
+
+</html>
