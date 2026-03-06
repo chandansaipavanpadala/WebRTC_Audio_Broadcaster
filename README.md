@@ -1,28 +1,28 @@
-# 🎵 AudioSync
+# AudioSync
 
-**AudioSync** is a real-time audio synchronization tool designed to create immersive shared listening experiences. It allows you to sync audio across multiple devices over Wi-Fi (like a silent disco) or duplicate your PC's audio to multiple connected Bluetooth speakers simultaneously.
+AudioSync is a real-time audio synchronization application designed to facilitate shared listening experiences. It enables the synchronization of audio across multiple devices over a local Wi-Fi network or the duplication of a central system's audio output to multiple connected external speakers.
 
-## ✨ Features
+## Features
 
-### 🌐 Network Speakers Mode (Silent Disco)
-- **Multi-Device Sync**: Stream audio from one "Broadcaster" device to multiple "Listener" devices (phones, laptops, tablets) over a local Wi-Fi network.
-- **Ultra-Low Latency**: Optimized WebRTC implementation with tuned jitter buffers and Opus codec settings (10ms packet size) for near-instant audio sync.
-- **Visualizer**: Real-time frequency visualizer on all connected devices.
-- **Admin Control**: Secure room creation with admin controls to designate broadcasters.
+### Network Speakers Mode
+- **Multi-Device Synchronization**: Broadcast audio from a single source device to multiple client devices (smartphones, laptops, and tablets) over a local network.
+- **Ultra-Low Latency**: Utilizes an optimized WebRTC implementation with customized jitter buffers and Opus codec configurations (10ms packet size) to ensure near-instantaneous audio synchronization.
+- **Audio Visualization**: Includes a real-time frequency visualizer active on all connected client devices.
+- **Access Control**: Supports secure room creation with administrative controls for designating source broadcasters.
 
-### 🎧 Bluetooth Multi-Output Mode
-- **Dual Audio Output**: Play audio to multiple output devices connected to a single computer (e.g., connected Bluetooth speaker + wired headphones) simultaneously.
-- **Browser-Based**: No complex virtual audio cable software required; runs entirely in the browser using the Web Audio API.
+### Multi-Output Mode
+- **Simultaneous Output**: Route audio to multiple hardware output devices connected to a single host computer (e.g., streaming to a Bluetooth speaker and wired headphones concurrently).
+- **Web-Native Execution**: Operates entirely within the browser utilizing the Web Audio API, eliminating the need for third-party virtual audio routing software.
 
-## 🛠️ Technology Stack
-- **Frontend**: HTML5, Vanilla JavaScript, CSS3 (Modern Glassmorphism UI).
-- **Backend/Signaling**: [Bun](https://bun.sh) (High-performance JavaScript runtime).
-- **Protocol**: WebRTC (Data & Audio Streaming), WebSockets (Signaling).
+## Technology Stack
+- **Frontend**: HTML5, Vanilla JavaScript, CSS3
+- **Backend & Signaling**: [Bun](https://bun.sh) runtime
+- **Communication Protocols**: WebRTC (Data & Audio Transmission), WebSockets (Signaling)
 
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- [Bun](https://bun.sh) installed on your system.
+- Ensure [Bun](https://bun.sh) is installed on your host system.
 
 ### Installation
 1. Clone the repository:
@@ -33,32 +33,32 @@
    ```bash
    cd AudioSync
    ```
-3. Install dependencies (if any):
+3. Install the required dependencies:
    ```bash
    bun install
    ```
 
 ### Running the Server
-Start the local server using Bun:
+Initialize the local server using Bun:
 ```bash
 bun server.js
 ```
 
-The terminal will display two URLs:
-- **Local**: `http://localhost:3000` (For the host device)
-- **Network**: `http://192.168.x.x:3000` (Share this with other devices on your Wi-Fi)
+Upon execution, the terminal will provide two access URLs:
+- **Localhost**: `http://localhost:3000` (For access on the host machine)
+- **Network IP**: `http://192.168.x.x:3000` (For access by client devices on the same local network)
 
-## 📖 Usage
+## Usage Instructions
 
-### Using Network Sync
-1. Open the app on the **Host** device and select **Network Speakers**.
-2. Enter your name and click **Create New Room**.
-3. Share the **Room Code** with friends.
-4. On **Guest** devices, select **Network Speakers**, enter the **Room Code**, and Join.
-5. The Host (Admin) clicks **Start Streaming** or designates a guest as the Broadcaster.
+### Network Synchronization
+1. Access the application on the host device and select **Network Speakers**.
+2. Input a designated username and select **Create New Room**.
+3. Distribute the generated **Room Code** to prospective client users.
+4. On client devices, select **Network Speakers**, input the provided **Room Code**, and select **Join**.
+5. The designated administrator can initiate playback by selecting **Start Streaming** or assign broadcasting privileges to a joined client.
 
-### Using Bluetooth Multi-Output
-1. Open the app on your PC.
+### Multi-Output Routing
+1. Access the application on the host system.
 2. Select **Bluetooth Multi-Output**.
-3. Click **Start Audio Source** and select the tab or screen you want to play audio from.
-4. The list will show all connected audio devices. Click on the devices you want to duplicate the audio to.
+3. Select **Start Audio Source** and authorize the browser to capture the desired audio stream (tab or system audio).
+4. The interface will populate a list of available hardware audio devices. Select the desired destination devices to initiate duplicated audio routing.
