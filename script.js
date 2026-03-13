@@ -45,11 +45,34 @@ const ctx = canvas.getContext('2d');
 const remoteAudioEl = document.getElementById('remote-audio');
 
 // Config
-const WS_URL = 'ws://' + window.location.host + '/ws';
+// Auto-detect signaling server: use env-injected global or derive from current host
+const SIGNALING_SERVER_URL = window.__ENV__?.SIGNALING_SERVER_URL || window.location.host;
+const WS_PROTOCOL = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+const WS_URL = WS_PROTOCOL + SIGNALING_SERVER_URL + '/ws';
+
 const ICE_SERVERS = {
   iceServers: [
+    // Public Google STUN servers (free, reliable)
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' }
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
+    { urls: 'stun:stun3.l.google.com:19302' },
+    { urls: 'stun:stun4.l.google.com:19302' },
+    // ──────────────────────────────────────────────────────────
+    // TURN Server (Required for users behind symmetric NATs)
+    // Replace with your own Coturn or Metered.ca credentials.
+    // Sign up at https://www.metered.ca/stun-turn for free tier.
+    // ──────────────────────────────────────────────────────────
+    // {
+    //   urls: 'turn:a]relay.metered.ca:443?transport=tcp',
+    //   username: 'YOUR_METERED_USERNAME',
+    //   credential: 'YOUR_METERED_CREDENTIAL'
+    // },
+    // {
+    //   urls: 'turns:a]relay.metered.ca:443?transport=tcp',
+    //   username: 'YOUR_METERED_USERNAME',
+    //   credential: 'YOUR_METERED_CREDENTIAL'
+    // }
   ]
 };
 

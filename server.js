@@ -1,7 +1,66 @@
 import { join } from "path";
 
-// State
-const rooms = new Map(); // roomCode -> Set<ws>
+// ─── Environment Configuration ───────────────────────────────────────────────
+const PORT = parseInt(process.env.PORT || '3000', 10);
+const HOST = process.env.HOST || '0.0.0.0';
+const LAN_ONLY = process.env.LAN_ONLY === 'true';
+
+// ─── Room Store Abstraction ──────────────────────────────────────────────────
+// Currently uses an in-memory Map. To persist rooms across server restarts
+// or scale horizontally, swap this with a Redis-backed implementation:
+//
+//   import { createClient } from 'redis';
+//   import { createAdapter } from '@socket.io/redis-adapter';
+//
+// Or implement a RedisRoomStore class with the same interface below.
+// ─────────────────────────────────────────────────────────────────────────────
+
+class RoomStore {
+  constructor() {
+    this.rooms = new Map(); // roomCode -> Set<ws>
+  }
+
+  has(roomCode) {
+    return this.rooms.has(roomCode);
+  }
+
+  get(roomCode) {
+    return this.rooms.get(roomCode);
+  }
+
+  create(roomCode) {
+    if (!this.rooms.has(roomCode)) {
+      this.rooms.set(roomCode, new Set());
+    }
+    return this.rooms.get(roomCode);
+  }
+
+  addClient(roomCode, ws) {
+    const room = this.create(roomCode);
+    room.add(ws);
+    return room;
+  }
+
+  removeClient(roomCode, ws) {
+    const room = this.rooms.get(roomCode);
+    if (!room) return;
+    room.delete(ws);
+    if (room.size === 0) {
+      this.rooms.delete(roomCode);
+    }
+  }
+
+  getSize(roomCode) {
+    const room = this.rooms.get(roomCode);
+    return room ? room.size : 0;
+  }
+
+  delete(roomCode) {
+    this.rooms.delete(roomCode);
+  }
+}
+
+const roomStore = new RoomStore();
 // ws.data = { roomCode, name, id, isBroadcaster }
 
 // --- Network Utilities ---
@@ -56,17 +115,16 @@ const getMmimeType = (filename) => {
 };
 
 const server = Bun.serve({
-    port: 3000,
-    hostname: "0.0.0.0", // Listen on all interfaces
+    port: PORT,
+    hostname: HOST,
     async fetch(req, server) {
         const url = new URL(req.url);
         const clientIP = server.requestIP(req)?.address || "abc";
 
-        // IP Filtering: Enable to restrict to LAN only
-        if (!isLocalNetwork(clientIP)) {
-            // Optional: Strict Mode
+        // IP Filtering: Controlled via LAN_ONLY env variable
+        if (LAN_ONLY && !isLocalNetwork(clientIP)) {
             console.log(`Blocked external connection from ${clientIP}`);
-            // return new Response("Access Denied: Local Network Only", { status: 403 });
+            return new Response("Access Denied: Local Network Only", { status: 403 });
         }
 
         // Serve Static Files
@@ -139,17 +197,20 @@ function handleMessage(ws, data) {
 }
 
 function handleCreate(ws, { name }) {
-    const roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    // Generate a collision-resistant 6-char room code
+    let roomCode;
+    do {
+        roomCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    } while (roomStore.has(roomCode));
     joinRoom(ws, roomCode, name, true); // true = isAdmin
 }
 
 function handleJoin(ws, { roomCode, name }) {
-    if (!rooms.has(roomCode)) {
+    if (!roomStore.has(roomCode)) {
         ws.send(JSON.stringify({ type: 'error', message: 'Room not found' }));
         return;
     }
-    const room = rooms.get(roomCode);
-    if (room.size >= 7) {
+    if (roomStore.getSize(roomCode) >= 7) {
         ws.send(JSON.stringify({ type: 'error', message: 'Room is full (Max 7)' }));
         return;
     }
@@ -159,11 +220,7 @@ function handleJoin(ws, { roomCode, name }) {
 function joinRoom(ws, roomCode, name, isAdmin) {
     handleLeave(ws); // Ensure left previous room
 
-    if (!rooms.has(roomCode)) {
-        rooms.set(roomCode, new Set());
-    }
-    const room = rooms.get(roomCode);
-    room.add(ws);
+    roomStore.addClient(roomCode, ws);
 
     ws.data.roomCode = roomCode;
     ws.data.name = name;
@@ -181,12 +238,9 @@ function joinRoom(ws, roomCode, name, isAdmin) {
 
 function handleLeave(ws) {
     const { roomCode } = ws.data;
-    if (roomCode && rooms.has(roomCode)) {
-        const room = rooms.get(roomCode);
-        room.delete(ws);
-        if (room.size === 0) {
-            rooms.delete(roomCode);
-        } else {
+    if (roomCode && roomStore.has(roomCode)) {
+        roomStore.removeClient(roomCode, ws);
+        if (roomStore.has(roomCode)) {
             broadcastRoomUpdate(roomCode);
         }
     }
@@ -194,8 +248,8 @@ function handleLeave(ws) {
 }
 
 function broadcastRoomUpdate(roomCode) {
-    if (!rooms.has(roomCode)) return;
-    const room = rooms.get(roomCode);
+    if (!roomStore.has(roomCode)) return;
+    const room = roomStore.get(roomCode);
     const peers = Array.from(room).map(c => ({
         id: c.data.id,
         name: c.data.name,
@@ -214,9 +268,9 @@ function broadcastRoomUpdate(roomCode) {
 function handleSignaling(ws, data) {
     const { targetId } = data;
     const roomCode = ws.data.roomCode;
-    if (!roomCode || !rooms.has(roomCode)) return;
+    if (!roomCode || !roomStore.has(roomCode)) return;
 
-    const room = rooms.get(roomCode);
+    const room = roomStore.get(roomCode);
     // Find target
     for (const client of room) {
         if (client.data.id === targetId) {
@@ -234,7 +288,8 @@ function handleSetBroadcaster(ws, { targetId }) {
     if (!ws.data.isAdmin) return;
 
     const roomCode = ws.data.roomCode;
-    const room = rooms.get(roomCode);
+    if (!roomStore.has(roomCode)) return;
+    const room = roomStore.get(roomCode);
 
     room.forEach(client => {
         client.data.isBroadcaster = (client.data.id === targetId);
@@ -253,14 +308,17 @@ function handleSetBroadcaster(ws, { targetId }) {
 }
 
 console.log(`\n🎵 AudioSync Server Running!`);
-console.log(`---------------------------------------------`);
+console.log(`─────────────────────────────────────────────`);
+console.log(`Mode:    ${LAN_ONLY ? '🔒 LAN Only' : '🌐 Public (open to all)'}`);
 console.log(`Local:   http://localhost:${server.port}`);
 const localIPs = getLocalIPs();
 localIPs.forEach(ip => {
     console.log(`Network: http://${ip}:${server.port}`);
 });
-console.log(`---------------------------------------------`);
+console.log(`─────────────────────────────────────────────`);
 console.log(`Share the Network URL with devices on your Wi-Fi.`);
 if (localIPs.length === 0) {
-    console.log(`⚠️  Warning: No local network IP found using os.networkInterfaces(). Check your connection.`);
+    console.log(`⚠️  Warning: No local network IP found. Check your connection.`);
 }
+console.log(`\n💡 For production: set PORT, HOST, and LAN_ONLY env vars.`);
+console.log(`   HTTPS is REQUIRED for WebRTC/mic access in production.\n`);
