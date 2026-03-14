@@ -52,27 +52,8 @@ const WS_URL = WS_PROTOCOL + SIGNALING_SERVER_URL + '/ws';
 
 const ICE_SERVERS = {
   iceServers: [
-    // Public Google STUN servers (free, reliable)
     { urls: 'stun:stun.l.google.com:19302' },
-    { urls: 'stun:stun1.l.google.com:19302' },
-    { urls: 'stun:stun2.l.google.com:19302' },
-    { urls: 'stun:stun3.l.google.com:19302' },
-    { urls: 'stun:stun4.l.google.com:19302' },
-    // ──────────────────────────────────────────────────────────
-    // TURN Server (Required for users behind symmetric NATs)
-    // Replace with your own Coturn or Metered.ca credentials.
-    // Sign up at https://www.metered.ca/stun-turn for free tier.
-    // ──────────────────────────────────────────────────────────
-    // {
-    //   urls: 'turn:a]relay.metered.ca:443?transport=tcp',
-    //   username: 'YOUR_METERED_USERNAME',
-    //   credential: 'YOUR_METERED_CREDENTIAL'
-    // },
-    // {
-    //   urls: 'turns:a]relay.metered.ca:443?transport=tcp',
-    //   username: 'YOUR_METERED_USERNAME',
-    //   credential: 'YOUR_METERED_CREDENTIAL'
-    // }
+    { urls: 'stun:stun1.l.google.com:19302' }
   ]
 };
 
@@ -158,6 +139,10 @@ async function scanOutputDevices() {
   if (btDefaultContainer) btDefaultContainer.innerHTML = '';
 
   try {
+    if (!window.isSecureContext) {
+      displays.btList.innerHTML = '<p style="color:red">Error: Application must be running in a secure context (HTTPS) to access media devices.</p>';
+      return;
+    }
     let devices = await navigator.mediaDevices.enumerateDevices();
 
     // Permission Check (Labels empty?)
@@ -286,6 +271,10 @@ async function toggleBluetoothSource() {
   } else {
     // START
     try {
+      if (!window.isSecureContext) {
+        alert("Application must be running in a secure context (HTTPS) to access media devices.");
+        return;
+      }
       btSourceStream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: "monitor" }, // Hint "Entire Screen"
         systemAudio: "include", // Hint Checkbox
@@ -589,6 +578,10 @@ async function toggleBroadcast() {
     buttons.startStream.className = "btn primary pulse-anim";
   } else {
     try {
+      if (!window.isSecureContext) {
+        alert("Application must be running in a secure context (HTTPS) to access media devices.");
+        return;
+      }
       localStream = await navigator.mediaDevices.getDisplayMedia({
         video: { displaySurface: "monitor" },
         systemAudio: "include",
@@ -662,6 +655,10 @@ function createPeerConnection(targetId) {
 
   pc.onicecandidate = (event) => {
     if (event.candidate) ws.send(JSON.stringify({ type: 'candidate', targetId: targetId, candidate: event.candidate }));
+  };
+
+  pc.onicecandidateerror = (event) => {
+    console.error("ICE candidate error:", event);
   };
 
   pc.ontrack = (event) => {
