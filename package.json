@@ -1,0 +1,11 @@
+{
+    "name": "webrtc-audio-broadcaster",
+    "version": "1.0.0",
+    "main": "server.js",
+    "scripts": {
+        "start": "bun server.js"
+    },
+    "dependencies": {
+        "bun-types": "latest"
+    }
+}
