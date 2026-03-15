@@ -3,74 +3,144 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AudioSync — Real-Time Audio Synchronization</title>
-  <meta name="description" content="AudioSync synchronizes audio playback across multiple devices in real-time using WebRTC. Stream to network speakers or duplicate audio to multiple Bluetooth outputs.">
-  <link rel="icon"
-    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎵</text></svg>">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>AudioSync</title>
+  <meta name="description"
+    content="AudioSync synchronizes audio playback across multiple devices in real-time using WebRTC. Stream to network speakers or duplicate audio to multiple Bluetooth outputs.">
+  <link rel="icon" type="image/svg+xml"
+    href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%2306b6d4'/%3E%3Cstop offset='100%25' stop-color='%238b5cf6'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='24' height='24' rx='6' fill='url(%23g)'/%3E%3Cpath d='M9 18V5l12-2v13' stroke='white' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' fill='none'/%3E%3Ccircle cx='6' cy='18' r='3' stroke='white' stroke-width='1.5' fill='none'/%3E%3Ccircle cx='18' cy='16' r='3' stroke='white' stroke-width='1.5' fill='none'/%3E%3C/svg%3E">
   <link rel="stylesheet" href="style.css">
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+    rel="stylesheet">
 </head>
 
 <body>
+  <!-- Ambient Glow Orbs -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
+
   <!-- GitHub Profile Button -->
-  <a href="https://github.com/chandansaipavanpadala/WebRTC_Audio_Broadcaster" target="_blank" rel="noopener noreferrer" class="github-wrapper" aria-label="Source Code">
-    <div id="github-btn" class="github-btn">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-        <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
-      </svg>
-    </div>
+  <a href="https://github.com/chandansaipavanpadala/WebRTC_Audio_Broadcaster" target="_blank" rel="noopener noreferrer"
+    class="github-fab" aria-label="Source Code" id="github-link">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path
+        d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z" />
+    </svg>
   </a>
+
   <div id="app">
-    <!-- Landing View -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- LANDING VIEW -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div id="landing-view" class="view active">
-      <h1 class="main-title">AudioSync</h1>
-      <p class="subtitle">Select your Sync Mode</p>
-
-      <div class="mode-selection">
-        <div class="mode-card" id="mode-network">
-          <div class="icon">🌐</div>
-          <h2>Network Speakers</h2>
-          <p>Sync audio across multiple phones/laptops via Wi-Fi.</p>
+      <div class="landing-content">
+        <div class="logo-mark">
+          <span class="logo-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+              stroke-linejoin="round">
+              <path d="M9 18V5l12-2v13" />
+              <circle cx="6" cy="18" r="3" />
+              <circle cx="18" cy="16" r="3" />
+            </svg>
+          </span>
         </div>
+        <h1 class="main-title">Audio<span class="title-accent">Sync</span></h1>
+        <p class="subtitle">Real-time audio synchronization across all your devices</p>
 
-        <div class="mode-card" id="mode-bluetooth">
-          <div class="icon">🎧</div>
-          <h2>Bluetooth Multi-Output</h2>
-          <p>Play to multiple local speakers connected to this PC.</p>
+        <div class="mode-selection">
+          <button class="mode-card" id="mode-network">
+            <div class="mode-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round">
+                <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                <circle cx="12" cy="20" r="1" fill="currentColor" />
+              </svg>
+            </div>
+            <div class="mode-text">
+              <h2>Network Speakers</h2>
+              <p>Sync audio across phones & laptops via Wi-Fi</p>
+            </div>
+            <span class="mode-arrow">→</span>
+          </button>
+
+          <button class="mode-card" id="mode-bluetooth">
+            <div class="mode-icon-wrap">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"
+                stroke-linejoin="round">
+                <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
+              </svg>
+            </div>
+            <div class="mode-text">
+              <h2>Bluetooth Multi-Output</h2>
+              <p>Play to multiple local speakers on this PC</p>
+            </div>
+            <span class="mode-arrow">→</span>
+          </button>
         </div>
       </div>
     </div>
 
-    <!-- Bluetooth Mode View -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- BLUETOOTH MODE VIEW -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div id="bluetooth-view" class="view hidden">
-      <header>
-        <button id="bt-back-btn" class="btn secondary small">← Back</button>
-        <h2 style="margin-left: 1rem;">Bluetooth Multi-Output</h2>
+      <header class="view-header">
+        <button id="bt-back-btn" class="btn-icon" aria-label="Go Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h2 class="view-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="6.5 6.5 17.5 17.5 12 23 12 1 17.5 6.5 6.5 17.5" />
+          </svg>
+          Bluetooth Multi-Output
+        </h2>
       </header>
 
-      <main>
-        <div class="control-panel">
-          <button id="bt-scan-btn" class="btn secondary">🔄 Rescan Devices</button>
-          <button id="bt-start-btn" class="btn primary pulse-anim">▶ Start Audio Source</button>
+      <main class="bt-main">
+        <div class="bt-controls-bar">
+          <button id="bt-scan-btn" class="btn btn-secondary">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 4 23 10 17 10" />
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10" />
+            </svg>
+            Rescan
+          </button>
+          <button id="bt-start-btn" class="btn btn-primary btn-glow">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3" />
+            </svg>
+            Start Audio Source
+          </button>
         </div>
 
-        <div id="bt-status" class="status-msg">First start source, then select devices to duplicate audio.</div>
+        <div id="bt-status" class="status-pill">
+          <span class="status-dot"></span>
+          First start source, then select devices to duplicate audio.
+        </div>
 
         <div class="device-section">
-          <h3>Original Source (Default)</h3>
+          <h3 class="section-label">Original Source (Default)</h3>
           <div id="bt-default-device" class="device-list list-view">
             <!-- Default device injected here -->
           </div>
         </div>
 
-        <div class="divider-line"></div>
+        <div class="section-divider"></div>
 
         <div class="device-section">
-          <h3>Duplicate To:</h3>
+          <h3 class="section-label">Duplicate To:</h3>
           <div id="bt-device-list" class="device-list list-view">
             <!-- Other devices injected here -->
           </div>
@@ -78,59 +148,164 @@
       </main>
     </div>
 
-    <!-- Network: Login View -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- NETWORK: LOGIN VIEW -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div id="login-view" class="view hidden">
-      <header>
-        <button id="net-back-btn" class="btn secondary small">← Back</button>
-        <h2 style="margin-left: 1rem;">Network Speakers</h2>
+      <header class="view-header">
+        <button id="net-back-btn" class="btn-icon" aria-label="Go Back">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+            stroke-linejoin="round">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+        </button>
+        <h2 class="view-title">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+            <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+            <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+            <circle cx="12" cy="20" r="1" fill="currentColor" />
+          </svg>
+          Network Speakers
+        </h2>
       </header>
+
       <main class="center-content">
-        <div class="card">
-          <input type="text" id="username" placeholder="Your Name" autocomplete="off">
-          <div class="divider"></div>
-          <button id="create-btn" class="btn primary">Create New Room</button>
-          <div class="or-separator">OR</div>
+        <div class="login-card">
+          <div class="card-header">
+            <h3>Join a Session</h3>
+            <p>Enter your name to create or join an audio room</p>
+          </div>
+
+          <div class="input-group">
+            <label for="username" class="input-label">Your Display Name</label>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+              <input type="text" id="username" placeholder="Enter your name" autocomplete="off">
+            </div>
+          </div>
+
+          <button id="create-btn" class="btn btn-primary btn-lg btn-glow">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10" />
+              <line x1="12" y1="8" x2="12" y2="16" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+            </svg>
+            Create New Room
+          </button>
+
+          <div class="divider-or">
+            <span>OR</span>
+          </div>
+
           <div class="join-group">
-            <input type="text" id="room-code-input" placeholder="Room Code (6 chars)" maxlength="6">
-            <button id="join-btn" class="btn secondary">Join</button>
+            <div class="input-wrap">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+              <input type="text" id="room-code-input" placeholder="Room Code" maxlength="6"
+                style="text-transform: uppercase; letter-spacing: 3px; font-weight: 700;">
+            </div>
+            <button id="join-btn" class="btn btn-secondary btn-lg">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" />
+                <polyline points="10 17 15 12 10 7" />
+                <line x1="15" y1="12" x2="3" y2="12" />
+              </svg>
+              Join
+            </button>
           </div>
         </div>
       </main>
     </div>
 
-    <!-- Network: Room View -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- NETWORK: ROOM VIEW -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
     <div id="room-view" class="view hidden">
-      <header>
+      <header class="room-header">
         <div class="room-info">
-          <span class="label">ROOM CODE</span>
+          <span class="room-label">ROOM CODE</span>
           <h1 id="room-display">------</h1>
         </div>
-        <button id="leave-btn" class="btn danger small">Leave</button>
+        <div class="room-header-actions">
+          <div id="live-badge" class="live-badge hidden">
+            <span class="live-dot"></span>
+            LIVE
+          </div>
+          <button id="leave-btn" class="btn btn-danger btn-sm">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            Leave
+          </button>
+        </div>
       </header>
 
-      <main>
+      <main class="room-main">
+        <!-- Visualizer -->
         <div id="visualizer-container">
           <canvas id="visualizer"></canvas>
-          <div id="status-text">Waiting for audio...</div>
+          <div id="status-text" class="vis-status">
+            <span class="status-dot"></span>
+            Waiting for audio...
+          </div>
         </div>
 
+        <!-- Controls Area -->
         <div class="controls-area">
           <!-- Broadcaster Controls -->
-          <div id="broadcaster-controls" class="hidden">
-            <p class="role-badge">You are the Broadcaster</p>
-            <button id="start-stream-btn" class="btn primary pulse-anim">Start Streaming</button>
+          <div id="broadcaster-controls" class="control-card hidden">
+            <p class="role-badge broadcaster-badge">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+              </svg>
+              You are the Broadcaster
+            </p>
+            <button id="start-stream-btn" class="btn btn-primary btn-lg btn-glow">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z" />
+                <path d="M19 10v2a7 7 0 0 1-14 0v-2" />
+                <line x1="12" y1="19" x2="12" y2="23" />
+                <line x1="8" y1="23" x2="16" y2="23" />
+              </svg>
+              Start Streaming
+            </button>
           </div>
 
           <!-- Admin Controls -->
-          <div id="admin-controls" class="hidden">
-            <span class="section-title">Admin Panel</span>
-            <p class="hint">Select a device below to broadcast</p>
+          <div id="admin-controls" class="control-card hidden">
+            <span class="section-label">
+              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path
+                  d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              Admin Panel
+            </span>
+            <p class="hint">Select a device below to assign as broadcaster</p>
           </div>
         </div>
 
+        <!-- Connected Devices -->
         <div class="device-list-container">
           <div class="section-header">
-            <h2>Connected Devices <span id="device-count">(0/7)</span></h2>
+            <h2 class="section-label">Connected Devices <span id="device-count">(0/7)</span></h2>
           </div>
           <div id="device-list" class="grid-list">
             <!-- Devices injected here -->
@@ -138,6 +313,7 @@
         </div>
       </main>
     </div>
+
     <!-- Copyright Footer -->
     <footer id="app-footer" class="app-footer">
       <span>Copyright © 2026 Audio Sync | Developed by Chandan Sai Pavan Padala</span>

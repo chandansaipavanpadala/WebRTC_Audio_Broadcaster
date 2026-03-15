@@ -1,7 +1,19 @@
 import { join } from "path";
 
+// 1. SELF-PING LOGIC (Keep Render Awake)
+const RENDER_URL = "https://webrtc-audio-broadcaster.onrender.com"; // Replace with your actual URL
+
+setInterval(async () => {
+  try {
+    const res = await fetch(RENDER_URL);
+    console.log(`[Self-Ping] Status: ${res.status} at ${new Date().toISOString()}`);
+  } catch (e) {
+    console.error("[Self-Ping] Failed:", e.message);
+  }
+}, 600000); // 10 minutes
+
 // ─── Environment Configuration ───────────────────────────────────────────────
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = process.env.PORT || 3000;
 const HOST = process.env.HOST || '0.0.0.0';
 const LAN_ONLY = process.env.LAN_ONLY === 'true';
 
@@ -161,17 +173,27 @@ const server = Bun.serve({
     },
     websocket: {
         open(ws) {
+            ws.subscribe("audio-broadcast"); // Join the common room for signaling
             // Wait for 'join' message
         },
         message(ws, message) {
             try {
                 const data = JSON.parse(message);
+                
+                // Broadcast signaling (Offers, Answers, ICE) to everyone ELSE in the room
+                // This allows multiple listeners to receive the broadcaster's signal natively
+                if (['offer', 'answer', 'candidate'].includes(data.type)) {
+                    ws.publish("audio-broadcast", typeof message === 'string' ? message : new TextDecoder().decode(message));
+                    return;
+                }
+
                 handleMessage(ws, data);
             } catch (e) {
                 console.error("WS Parse Error", e);
             }
         },
         close(ws) {
+            ws.unsubscribe("audio-broadcast");
             handleLeave(ws);
         }
     }
@@ -188,7 +210,7 @@ function handleMessage(ws, data) {
         case 'offer':
         case 'answer':
         case 'candidate':
-            handleSignaling(ws, data);
+            // Handled via native ws.publish("audio-broadcast") above
             break;
         case 'set-broadcaster':
             handleSetBroadcaster(ws, data);
@@ -265,24 +287,7 @@ function broadcastRoomUpdate(roomCode) {
     });
 }
 
-function handleSignaling(ws, data) {
-    const { targetId } = data;
-    const roomCode = ws.data.roomCode;
-    if (!roomCode || !roomStore.has(roomCode)) return;
-
-    const room = roomStore.get(roomCode);
-    // Find target
-    for (const client of room) {
-        if (client.data.id === targetId) {
-            // Forward the message with senderId
-            client.send(JSON.stringify({
-                ...data,
-                senderId: ws.data.id
-            }));
-            break;
-        }
-    }
-}
+// handleSignaling loop replaced by native ws.publish broadcasting
 
 function handleSetBroadcaster(ws, { targetId }) {
     if (!ws.data.isAdmin) return;

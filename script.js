@@ -75,11 +75,26 @@ let btSourceStream = null;
 let activeOutputs = new Map(); // deviceId -> AudioElement
 const btDefaultContainer = document.getElementById('bt-default-device');
 
+// --- Canvas Resize (match internal resolution to CSS display size) ---
+function resizeCanvas() {
+  const cssWidth = canvas.clientWidth;
+  const cssHeight = canvas.clientHeight;
+  const dpr = window.devicePixelRatio || 1;
+  const targetW = Math.round(cssWidth * dpr);
+  const targetH = Math.round(cssHeight * dpr);
+  if (canvas.width !== targetW || canvas.height !== targetH) {
+    canvas.width = targetW;
+    canvas.height = targetH;
+  }
+}
+
+// LIVE badge element
+const liveBadge = document.getElementById('live-badge');
+
 // --- Initialization ---
 
 function init() {
-  canvas.width = canvas.parentElement?.offsetWidth || 300;
-  canvas.height = canvas.parentElement?.offsetHeight || 150;
+  resizeCanvas();
 
   // Navigation
   buttons.modeNetwork.addEventListener('click', () => switchView('login'));
@@ -94,19 +109,17 @@ function init() {
   buttons.create.addEventListener('click', () => connect('create'));
   buttons.join.addEventListener('click', () => connect('join'));
   buttons.leave.addEventListener('click', leaveRoom);
-  buttons.startStream.addEventListener('click', toggleBroadcast); // Toggle
+  buttons.startStream.addEventListener('click', toggleBroadcast);
 
   // BT Actions
   buttons.btScan.addEventListener('click', scanOutputDevices);
-  buttons.btStart.addEventListener('click', toggleBluetoothSource); // Toggle
+  buttons.btStart.addEventListener('click', toggleBluetoothSource);
 
-  // Resize observer
-  if (canvas.parentElement) {
-    new ResizeObserver(() => {
-      canvas.width = canvas.parentElement.offsetWidth;
-      canvas.height = canvas.parentElement.offsetHeight;
-    }).observe(canvas.parentElement);
+  // Responsive canvas via ResizeObserver + fallback
+  if (typeof ResizeObserver !== 'undefined' && canvas.parentElement) {
+    new ResizeObserver(resizeCanvas).observe(canvas.parentElement);
   }
+  window.addEventListener('resize', resizeCanvas);
 
   requestAnimationFrame(drawVisualizer);
 }
@@ -143,23 +156,31 @@ async function scanOutputDevices() {
       displays.btList.innerHTML = '<p style="color:red">Error: Application must be running in a secure context (HTTPS) to access media devices.</p>';
       return;
     }
-    let devices = await navigator.mediaDevices.enumerateDevices();
 
-    // Permission Check (Labels empty?)
-    const hasLabels = devices.some(d => d.label !== '');
-    if (!hasLabels) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        stream.getTracks().forEach(t => t.stop());
-        devices = await navigator.mediaDevices.enumerateDevices();
-      } catch (err) {
-        displays.btList.innerHTML = '<p>Permission needed to see device names.</p>';
-        return;
-      }
+    // Explicitly request mic permission FIRST so BT devices are unhidden
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: { echoCancellation: false, noiseSuppression: false } 
+      });
+      stream.getTracks().forEach(t => t.stop());
+    } catch (err) {
+      displays.btList.innerHTML = '<p style="color:red">Microphone permission denied. Cannot scan devices.</p>';
+      return;
     }
+
+    let devices = await navigator.mediaDevices.enumerateDevices();
 
     const outputs = devices.filter(d => d.kind === 'audiooutput');
     displays.btList.innerHTML = '';
+
+    // Inject Refresh Button
+    const refreshBtn = document.createElement('button');
+    refreshBtn.className = 'btn primary';
+    refreshBtn.style.marginBottom = '15px';
+    refreshBtn.style.width = '100%';
+    refreshBtn.textContent = '↻ Refresh Devices';
+    refreshBtn.onclick = scanOutputDevices;
+    displays.btList.appendChild(refreshBtn);
 
     if (outputs.length === 0) {
       displays.btList.innerHTML = '<p>No output devices found.</p>';
@@ -517,12 +538,16 @@ function updateControls() {
   // Hide Admin Panel if: I am NOT admin OR (I am admin BUT a broadcaster is already selected)
   displays.adminCtrl.classList.toggle('hidden', !isMyAdmin || broadcasterExists);
 
+  // Toggle LIVE badge
+  const isLive = localStream !== null;
+  if (liveBadge) liveBadge.classList.toggle('hidden', !isLive);
+
   if (isMyBroadcaster) {
-    displays.status.textContent = "You are the broadcaster. Start streaming audio!";
+    displays.status.innerHTML = '<span class="status-dot" style="background:var(--accent-primary)"></span> You are the broadcaster. Start streaming audio!';
   } else if (broadcasterExists) {
-    displays.status.textContent = "Broadcast is active. Listening...";
+    displays.status.innerHTML = '<span class="status-dot" style="background:var(--accent-success)"></span> Broadcast is active. Listening...';
   } else {
-    displays.status.textContent = "Waiting for broadcaster selection...";
+    displays.status.innerHTML = '<span class="status-dot"></span> Waiting for broadcaster selection...';
   }
 }
 
@@ -647,14 +672,14 @@ async function initiateConnection(targetId) {
   offer.sdp = setSDPOpusConfig(offer.sdp);
 
   await pc.setLocalDescription(offer);
-  ws.send(JSON.stringify({ type: 'offer', targetId: targetId, sdp: offer }));
+  ws.send(JSON.stringify({ type: 'offer', targetId: targetId, senderId: myId, sdp: offer }));
 }
 
 function createPeerConnection(targetId) {
   const pc = new RTCPeerConnection(ICE_SERVERS);
 
   pc.onicecandidate = (event) => {
-    if (event.candidate) ws.send(JSON.stringify({ type: 'candidate', targetId: targetId, candidate: event.candidate }));
+    if (event.candidate) ws.send(JSON.stringify({ type: 'candidate', targetId: targetId, senderId: myId, candidate: event.candidate }));
   };
 
   pc.onicecandidateerror = (event) => {
@@ -691,7 +716,7 @@ async function handleOffer(msg) {
   answer.sdp = setSDPOpusConfig(answer.sdp); // Apply optimization to Answer too
 
   await pc.setLocalDescription(answer);
-  ws.send(JSON.stringify({ type: 'answer', targetId: msg.senderId, sdp: answer }));
+  ws.send(JSON.stringify({ type: 'answer', targetId: msg.senderId, senderId: myId, sdp: answer }));
 }
 
 async function handleAnswer(msg) {
@@ -709,12 +734,12 @@ async function handleCandidate(msg) {
 function setupVisualizer(stream) {
   if (audioContext) audioContext.close();
   audioContext = new (window.AudioContext || window.webkitAudioContext)({
-    latencyHint: 'interactive' // Optimize context for speed
+    latencyHint: 'interactive'
   });
   const source = audioContext.createMediaStreamSource(stream);
   analyser = audioContext.createAnalyser();
   analyser.fftSize = 256;
-  analyser.smoothingTimeConstant = 0.5; // Faster visual response
+  analyser.smoothingTimeConstant = 0.6;
   source.connect(analyser);
 
   const bufferLength = analyser.frequencyBinCount;
@@ -723,22 +748,71 @@ function setupVisualizer(stream) {
 
 function drawVisualizer() {
   requestAnimationFrame(drawVisualizer);
-  ctx.fillStyle = 'rgba(0, 0, 0, 0.2)';
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  if (!analyser) return;
+
+  // Ensure canvas resolution matches display
+  resizeCanvas();
+
+  const W = canvas.width;
+  const H = canvas.height;
+
+  // FULL clear — eliminates ghosting completely
+  ctx.clearRect(0, 0, W, H);
+
+  if (!analyser || !dataArray) {
+    // Draw idle state — subtle center line
+    ctx.strokeStyle = 'rgba(6, 182, 212, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, H / 2);
+    ctx.lineTo(W, H / 2);
+    ctx.stroke();
+    return;
+  }
 
   analyser.getByteFrequencyData(dataArray);
-  const barWidth = (canvas.width / dataArray.length) * 2.5;
-  let x = 0;
 
-  for (let i = 0; i < dataArray.length; i++) {
-    const barHeight = dataArray[i] / 2;
-    const r = barHeight + 25 * (i / dataArray.length);
-    const g = 250 * (i / dataArray.length);
-    const b = 50;
-    ctx.fillStyle = `rgb(${r},${g},${b})`;
-    ctx.fillRect(x, canvas.height - barHeight, barWidth, barHeight);
-    x += barWidth + 1;
+  const barCount = dataArray.length;
+  const gap = Math.max(1, W * 0.003);
+  const barWidth = (W - gap * barCount) / barCount;
+  const maxBarHeight = H * 0.9;
+  const cornerRadius = Math.max(1, barWidth / 3);
+
+  for (let i = 0; i < barCount; i++) {
+    const normalised = dataArray[i] / 255;
+    const barHeight = normalised * maxBarHeight;
+    if (barHeight < 1) continue;
+
+    const x = i * (barWidth + gap);
+    const y = H - barHeight;
+
+    // Per-bar gradient: Cyan → Purple based on frequency index
+    const grad = ctx.createLinearGradient(x, H, x, y);
+    const hueStart = 185 + (i / barCount) * 80;   // 185 (cyan) → 265 (purple)
+    const lightness = 50 + normalised * 15;        // brighter at higher volume
+    grad.addColorStop(0, `hsla(${hueStart}, 85%, ${lightness}%, 0.3)`);
+    grad.addColorStop(0.5, `hsla(${hueStart}, 90%, ${lightness}%, 0.7)`);
+    grad.addColorStop(1, `hsla(${hueStart}, 95%, ${lightness + 10}%, 1)`);
+
+    ctx.fillStyle = grad;
+
+    // Draw rounded-top bar
+    ctx.beginPath();
+    ctx.moveTo(x, H);
+    ctx.lineTo(x, y + cornerRadius);
+    ctx.quadraticCurveTo(x, y, x + cornerRadius, y);
+    ctx.lineTo(x + barWidth - cornerRadius, y);
+    ctx.quadraticCurveTo(x + barWidth, y, x + barWidth, y + cornerRadius);
+    ctx.lineTo(x + barWidth, H);
+    ctx.closePath();
+    ctx.fill();
+
+    // Glow on loud bars
+    if (normalised > 0.6) {
+      ctx.shadowColor = `hsla(${hueStart}, 90%, 60%, ${normalised * 0.4})`;
+      ctx.shadowBlur = 12;
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    }
   }
 }
 
